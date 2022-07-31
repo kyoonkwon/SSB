@@ -264,8 +264,7 @@ def generate_msg(msg):
 
 def generate_report(account, results):
 
-    KST = datetime.timezone(datetime.timedelta(hours=9))
-    date = datetime.datetime.now(tz=KST).isoformat()
+    date = datetime.datetime.now().isoformat()
     report = ""
     report += header
 

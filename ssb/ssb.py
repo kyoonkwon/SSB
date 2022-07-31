@@ -8,29 +8,28 @@ import sys, os
 sys.path.append(os.path.dirname(__file__))
 import text
 
-def append_alert(ret, alert, title):
-    ret["alerts"].append({
-        "level": alert["level"],
-        "msg": alert["msg"],
-        "title": title
-    })
+# def append_alert(ret, alert, title):
+#     ret["alerts"].append({
+#         "level": alert["level"],
+#         "msg": alert["msg"],
+#         "title": title
+#     })
 
 def append_table(ret, num, row):
     ret["tables"][num]["rows"].append(row)
 
 
-"""
-    ret["alerts"].append({
-        "level": text.test[code]["level"],
-        "msg": text.test[code]["msg"],
-        "title: text.test["title"]
-    })
-
-
-"""
-
-
 def check01(session):
+
+    """
+        check01 - 대체 연락처 정보를 등록하였는지 확인
+        사용 API - get_alternate_contact
+        체크 기준 
+            - [Success] billing, security, operations에 모두 연락처 존재
+            - [Warning] 그 외 경우
+    
+    """
+
     s = time.time()
     title = "01 Accurate Information"
     account = session.client('account')
@@ -59,7 +58,6 @@ def check01(session):
                 level = "Warning"
                 ret["tables"][0]["rows"].append([t, "", "정보 없음", ""])      
             else:
-                # utils.print_error(error.response["Error"]["Message"])
                 errorMsg = error.response["Error"]["Message"]
                 level = "Error"
     
@@ -80,6 +78,27 @@ def check01(session):
     return ret
 
 def check02(session):
+
+    """
+        check02 - 루트 유저에 관련된 사항 체크
+        사용 API - get_credential_report
+        
+        check02-1 - 루트 유저 사용 체크
+        체크 기준
+            - [Success] 루트 유저의 Password, access key을 1일 내에 사용하지 않음
+            - [Danger] 그 외 경우
+
+        check02-2 - 루트 유저 MFA 설정 체크
+        체크 기준
+            - [Success] 루트 유저에 MFA가 설정되어 있음
+            - [Danger] 그 외 경우
+
+        check02-3 - 루트 유저 엑세스키 체크
+        체크 기준
+            - [Success] 루트 유저에 access key가 존재하지 않음
+            - [Danger] 그 외 경우
+    
+    """
 
     s = time.time()
 
