@@ -7,7 +7,8 @@ header = """<!DOCTYPE html>
     </meta>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     </meta>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
     </link>
     <title>Report</title>
 </head>
@@ -35,15 +36,9 @@ footer = """
             <div class="col"></div>
         </div>
     </div>
-    <script>
-        function click_summary(x){
-            if(x.className === "accordion-button collapsed"){
-                x.click()
-            }
-        }
-    
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2"
+        crossorigin="anonymous"></script>
 </body>
 
 </html>"""
@@ -159,7 +154,7 @@ def generate_li(items, level):
 
         ret += f'''<li class="list-group-item d-flex justify-content-between align-items-start">
             <div class="ms-2 me-auto">
-                <a href="#panelsStayOpen-heading{testNum}" onclick="click_summary(document.querySelector('#panelsStayOpen-heading{testNum} button'))"> {item} </a>
+                <a href="#panelsStayOpen-heading{testNum}" onclick="document.querySelector('#panelsStayOpen-heading{testNum} button').click()"> {item} </a>
             </div>
             <span class="badge text-bg-{"danger" if level == "error" else level} rounded-pill">{level.capitalize()}</span>
             </li>'''
@@ -264,8 +259,7 @@ def generate_msg(msg):
 
 def generate_report(account, results):
 
-    KST = datetime.timezone(datetime.timedelta(hours=9))
-    date = datetime.datetime.now(tz=KST).isoformat()
+    date = datetime.datetime.now().isoformat()
     report = ""
     report += header
 
@@ -280,7 +274,6 @@ def generate_report(account, results):
             elif alert["level"] == "Warning": warning.append(alert["title"])
             elif alert["level"] == "Success": success.append(alert["title"])
             elif alert["level"] == "Error": error.append(alert["title"])
-
 
     report += (generate_summary(account, date, danger, warning, success, error))
 

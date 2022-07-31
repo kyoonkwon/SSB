@@ -15,6 +15,7 @@ def lambda_handler(event, context):
     subscriptions = sns.list_subscriptions_by_topic(TopicArn = topic)["Subscriptions"]
     endpoints = list(map(lambda x: x["Endpoint"], subscriptions))
 
+    # subscription 안 한 경우
     for sub in subscriptions:
         if sub["SubscriptionArn"] != "PendingConfirmation":
             break
@@ -37,31 +38,6 @@ def lambda_handler(event, context):
     except Exception as e:
         print(e)
     
-    if flag:
-
-        ssb_func = os.environ["SSB"].split(":")[-1]
-        lamb.invoke(FunctionName=ssb_func, InvocationType='Event')
-        
-        s3 = boto3.client('s3')
-        s3.put_object(Bucket=bucket_name, Key="temp", Body='')
-        
-        return {
-            'statusCode': 200,
-            "body": f"""레포트를 생성 중 입니다. 생성 후, 이메일을 통하여 리포트 URL이 발송됩니다.
-            {endpoints}
-            """,
-            "headers": {
-                'Content-Type': 'text/html;charset=UTF-8',
-            }
-        }
-    
-    else:
-        KST = timezone(timedelta(hours=9))
-
-        return {
-            'statusCode': 400,
-            "body": f"API를 너무 자주 호출하였습니다. {(last_modified + timedelta(minutes=5)).astimezone(KST)} 이후 다시 호출해 주세요.",
-            "headers": {
-                'Content-Type': 'text/html;charset=UTF-8',
-            }
-        }
+    return {
+        'flag':flag
+    }

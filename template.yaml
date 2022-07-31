@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: An serverless application that tests the AWS SSB and generates a HTML report.
+Description: An serverless application that tests the AWS SSB and generates a HTML report
 
 Parameters:
   Email:
@@ -20,7 +20,40 @@ Parameters:
 
 Resources:
   SSBBucket:
-    Type: 'AWS::S3::Bucket'      
+    Type: AWS::S3::Bucket
+    Metadata:
+      SamResourceId: SSBBucket
+  LambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: S3andLambdaPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'sts:GetCallerIdentity'
+                  - 's3:PutObject'
+                  - 's3:GetObject'
+                  - 's3:DeleteObject'
+                  - 'lambda:InvokeFunction'
+                  - 'sns:Publish'
+                  - 'sns:ListSubscriptionsByTopic'
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
 
   SSBExecutionRole:
     Type: 'AWS::IAM::Role'
@@ -72,38 +105,6 @@ Resources:
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                 Resource: '*'
-  LambdaExecutionRole:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - 'sts:AssumeRole'
-      Path: /
-      Policies:
-        - PolicyName: S3andLambdaPolicy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - 'sts:GetCallerIdentity'
-                  - 's3:PutObject'
-                  - 's3:GetObject'
-                  - 's3:DeleteObject'
-                  - 'lambda:InvokeFunction'
-                  - 'sns:Publish'
-                  - 'sns:ListSubscriptionsByTopic'
-                  - 'logs:CreateLogGroup'
-                  - 'logs:CreateLogStream'
-                  - 'logs:PutLogEvents'
-                Resource: '*'
-
   SnsTopic:
     Type: AWS::SNS::Topic
     Properties:
@@ -111,23 +112,99 @@ Resources:
         - Endpoint: !Ref Email
           Protocol: 'email'
 
-  SSBFunction:
+##########################################################################
+#  Lambda functions                                                      #
+##########################################################################
+  EntryFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Role: !GetAtt SSBExecutionRole.Arn
-      CodeUri: ssb/
+      Role: !GetAtt LambdaExecutionRole.Arn
+      CodeUri: lambda/entry/
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      Timeout: 10
+      Environment: 
+        Variables:
+          Bucket: !GetAtt SSBBucket.Arn
+          Topic: !Ref SnsTopic
+      Architectures:
+        - x86_64
+  CheckAFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      Role:
+        Fn::GetAtt:
+        - SSBExecutionRole
+        - Arn
+      CodeUri: lambda/ssb/checkA/
       Handler: lambda_function.lambda_handler
       Runtime: python3.9
       Timeout: 600
       MemorySize: 256
-      Environment: 
+      Environment:
         Variables:
           Bucket: !GetAtt SSBBucket.Arn
-          Report: !Ref ReportFunction
-          Topic: !Ref SnsTopic
       Architectures:
-        - x86_64
-
+      - x86_64
+    Metadata:
+      SamResourceId: CheckAFunction
+  CheckBFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      Role:
+        Fn::GetAtt:
+        - SSBExecutionRole
+        - Arn
+      CodeUri: lambda/ssb/checkB/
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      Timeout: 600
+      MemorySize: 256
+      Environment:
+        Variables:
+          Bucket: !GetAtt SSBBucket.Arn
+      Architectures:
+      - x86_64
+    Metadata:
+      SamResourceId: CheckBFunction
+  CheckCFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      Role:
+        Fn::GetAtt:
+        - SSBExecutionRole
+        - Arn
+      CodeUri: lambda/ssb/checkC/
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      Timeout: 600
+      MemorySize: 256
+      Environment:
+        Variables:
+          Bucket: !GetAtt SSBBucket.Arn
+      Architectures:
+      - x86_64
+    Metadata:
+      SamResourceId: CheckCFunction
+  CheckDFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      Role:
+        Fn::GetAtt:
+        - SSBExecutionRole
+        - Arn
+      CodeUri: lambda/ssb/checkD/
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      Timeout: 600
+      MemorySize: 256
+      Environment:
+        Variables:
+          Bucket: !GetAtt SSBBucket.Arn
+      Architectures:
+      - x86_64
+    Metadata:
+      SamResourceId: CheckDFunction
   ApiGatewayEndpoint:
     Type: 'AWS::Serverless::Api'
     Properties:
@@ -147,58 +224,55 @@ Resources:
           }
 
   ReportFunction:
-    Type: AWS::Serverless::Function
+    Type: AWS::Serverless::Function 
     Properties:
       Role: !GetAtt LambdaExecutionRole.Arn
-      CodeUri: report/
+      CodeUri: lambda/report/
       Handler: lambda_function.lambda_handler
       Runtime: python3.9
       Timeout: 10
-      Environment: 
+      Environment:
         Variables:
           Bucket: !GetAtt SSBBucket.Arn
           Topic: !Ref SnsTopic
           Presigned: !Ref PreSignedURL
       Architectures:
-        - x86_64
-
-  EntryFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Role: !GetAtt LambdaExecutionRole.Arn
-      CodeUri: entry/
-      Handler: lambda_function.lambda_handler
-      Runtime: python3.9
-      Timeout: 10
-      Environment: 
-        Variables:
-          Bucket: !GetAtt SSBBucket.Arn
-          SSB: !GetAtt SSBFunction.Arn
-          Report: !GetAtt ReportFunction.Arn
-          Topic: !Ref SnsTopic
-      Architectures:
-        - x86_64
+      - x86_64
       Events:
         Report:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Type: Api
           Properties:
             RestApiId:
-                Ref: ApiGatewayEndpoint
+              Ref: ApiGatewayEndpoint
             Path: /
             Method: get
-  
-Outputs:
-  SSBApi:
-    Description: "API Gateway endpoint URL for Prod stage for SSB function"
-    Value: !Sub "https://${ApiGatewayEndpoint}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+    Metadata:
+      SamResourceId: ReportFunction
 
-Metadata:
-  AWS::ServerlessRepo::Application:
-    Name: AWS-SSB-Self-Test-Application
-    Description: An serverless application that tests the AWS SSB and generates a HTML report.
-    Author: Kihoon Kwon
-    SpdxLicenseId: Apache-2.0
-    LicenseUrl: LICENSE
-    ReadmeUrl: README.md
-    SemanticVersion: 1.1.1
-    SourceCodeUrl: https://github.com/kyoonkwon/SSB
+##########################################################################
+#   STEP FUNCTION                                                        #
+##########################################################################
+  SSBStateMachine:
+    Type: 'AWS::Serverless::StateMachine'
+    Properties:
+      DefinitionUri: statemachine/statemachine.asl.json
+      DefinitionSubstitutions:
+        entryFunction: !Ref EntryFunction
+        checkAFunction: !Ref CheckAFunction
+        checkBFunction: !Ref CheckBFunction
+        checkCFunction: !Ref CheckCFunction
+        checkDFunction: !Ref CheckDFunction
+        reportFunction: !Ref ReportFunction
+      Policies:
+        - LambdaInvokePolicy: 
+            FunctionName: !Ref EntryFunction
+        - LambdaInvokePolicy: 
+            FunctionName: !Ref CheckAFunction
+        - LambdaInvokePolicy: 
+            FunctionName: !Ref CheckBFunction
+        - LambdaInvokePolicy: 
+            FunctionName: !Ref CheckCFunction
+        - LambdaInvokePolicy: 
+            FunctionName: !Ref CheckDFunction
+        - LambdaInvokePolicy: 
+            FunctionName: !Ref ReportFunction
