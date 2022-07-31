@@ -1,5 +1,5 @@
 import boto3
-from datetime import date, datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta
 import os
 
 def lambda_handler(event, context):
@@ -56,11 +56,9 @@ def lambda_handler(event, context):
         }
     
     else:
-        KST = timezone(timedelta(hours=9))
-
         return {
             'statusCode': 400,
-            "body": f"API를 너무 자주 호출하였습니다. {(last_modified + timedelta(minutes=5)).astimezone(KST)} 이후 다시 호출해 주세요.",
+            "body": f"API를 너무 자주 호출하였습니다. {(last_modified + timedelta(minutes=5)).astimezone()} 이후 다시 호출해 주세요.",
             "headers": {
                 'Content-Type': 'text/html;charset=UTF-8',
             }

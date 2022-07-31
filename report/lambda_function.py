@@ -6,11 +6,13 @@ def lambda_handler(event, context):
 
     s3 = boto3.client('s3', config=boto3.session.Config(s3={'addressing_style': 'path'}, signature_version='s3v4'))
     sns= boto3.client("sns")
-    bucket_name = os.environ["Bucket"][13:]
-    object_name = f'result-{date.today().isoformat()}.html'
 
     topic = os.environ["Topic"]
     presigned = int(os.environ["Presigned"])
+    bucket_name = os.environ["Bucket"][13:]
+
+    object_name = f'result-{datetime.now().date().isoformat()}.html'
+
 
     try:
         response = s3.generate_presigned_url('get_object',
@@ -18,8 +20,7 @@ def lambda_handler(event, context):
                                                         'Key': object_name},
                                                 ExpiresIn=presigned * 60 * 60)        
         
-        KST = timezone(timedelta(hours=9))
-        expired = datetime.now(tz=KST) + timedelta(hours=presigned)
+        expired = datetime.now() + timedelta(hours=presigned)
 
         sns.publish(TopicArn=topic, Message=f"""        
         리포트 파일의 미리 서명된(pre-signed) url을 생성하였습니다.

@@ -125,6 +125,7 @@ Resources:
           Bucket: !GetAtt SSBBucket.Arn
           Report: !Ref ReportFunction
           Topic: !Ref SnsTopic
+          TZ: 'Asia/Seoul'
       Architectures:
         - x86_64
 
@@ -159,6 +160,7 @@ Resources:
           Bucket: !GetAtt SSBBucket.Arn
           Topic: !Ref SnsTopic
           Presigned: !Ref PreSignedURL
+          TZ: 'Asia/Seoul'
       Architectures:
         - x86_64
 
@@ -174,8 +176,8 @@ Resources:
         Variables:
           Bucket: !GetAtt SSBBucket.Arn
           SSB: !GetAtt SSBFunction.Arn
-          Report: !GetAtt ReportFunction.Arn
           Topic: !Ref SnsTopic
+          TZ: 'Asia/Seoul'
       Architectures:
         - x86_64
       Events:
