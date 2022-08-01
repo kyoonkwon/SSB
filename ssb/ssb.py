@@ -30,7 +30,7 @@ def check01(session):
     
     """
 
-    s = time.time()
+    
     title = "01 Accurate Information"
     account = session.client('account')
 
@@ -73,7 +73,6 @@ def check01(session):
         "title": text.test1["title"]
     })
 
-    print(title, time.time() - s)
 
     return ret
 
@@ -100,7 +99,7 @@ def check02(session):
     
     """
 
-    s = time.time()
+    
 
     title = "02 Protect Root User"
     iam = session.client('iam')
@@ -189,18 +188,30 @@ def check02(session):
         })
   
 
-    print(title, time.time() - s)
 
     return ret
 
 def check03(session):
 
-    s = time.time()
+    """
+        check03 - IAM 유저에 관련된 사항 체크
+        사용 API - get_credential_report, get_account_password_policy
+        
+        check03-1 - IAM 유저 MFA 설정 체크
+        체크 기준
+            - [Success] 모든 IAM 유저에 MFA가 설정되어 있음
+            - [NO_USER Warning] IAM 유저가 생성되어 있지 않음
+            - [Warning] 그 외 경우
+
+        check03-2 - 패스워드 정책 설정 체크
+        체크 기준
+            - [Success] 패스워드 정책이 설정되어 있음
+            - [Warning] 그 외 경우
+    
+    """
 
     title = "03 Create Users for Human Identities"
-
     iam = session.client('iam')
-
     ret = {
         "title": title,
         "alerts":[],
@@ -235,14 +246,9 @@ def check03(session):
             code = "NO_USER"
 
         for user in users:
-            if user[report_cols["MFA"]] == "true":
-                # utils.print_pass(f"User <{user[0]}> enables MFA")
-                pass
-            else:
-                code = "Warning"
-                # utils.print_fail(f"User <{user[0]}> does not enable MFA")
-
             ret["tables"][0]["rows"].append([user[0], user[report_cols["MFA"]], user[report_cols["ACCESS_KEY1"]], user[report_cols["ACCESS_KEY2"]]])
+            if user[report_cols["MFA"]] != "true":
+                code = "Warning"
 
         ret["alerts"].append({
             "level": text.test3_1[code]["level"],
@@ -254,21 +260,17 @@ def check03(session):
         code = "Error"
         try:
             policy = iam.get_account_password_policy()
-            # utils.print_pass("Set strong password policy to protect account")
             code = "Success"
             
 
         except botocore.exceptions.ClientError as error :
             if error.response['Error']['Code'] == 'NoSuchEntity':
-                # utils.print_fail("No password policy")
                 code = "Warning"
             else:
-                # utils.print_error(error.response["Error"]["Message"])
                 code = "Error"
                 errorMsg = error.response["Error"]["Message"]
 
     except botocore.exceptions.ClientError as error:
-        # utils.print_error(error.response["Error"]["Message"])
         code = "Error"
         errorMsg = error.response["Error"]["Message"]
 
@@ -278,18 +280,24 @@ def check03(session):
         "title": text.test3_2["title"]
     })
 
-    print(title, time.time() - s)
 
     return ret
 
 def check04(session):
 
-    s = time.time()
+    """
+        check04 - IAM User와 Group 체크
+        사용 API - list_users, list_attached_user_policies, list_user_policies
+        
+        체크 기준
+            - [Success] 모든 IAM 유저에 policy(관리형 정책, 인라인 정책)가 직접 할당되어 있지 않음
+            - [NO_USER Warning] IAM 유저가 생성되어 있지 않음
+            - [Warning] 그 외 경우
+    
+    """
 
     title = "04 Use User Groups"
     iam = session.client('iam')
-
-
     ret = {
         "title": title,
         "alerts":[],
@@ -303,43 +311,27 @@ def check04(session):
 
     code = "Success"
     errorMsg = ""
-    
 
     try:
         users = iam.list_users()["Users"]
 
-
         if(len(users) == 0):
-            # utils.print_fail("No user exists to access console")
             code = "NO_USER"
 
         
         for user in users:
             attached = iam.list_attached_user_policies(UserName=user["UserName"])["AttachedPolicies"]
             inline = iam.list_user_policies(UserName=user["UserName"])["PolicyNames"]
-
-            if len(attached) == 0:
-                # utils.print_pass(f"User <{user['UserName']}> is not attached policies")
-                pass
-            else:
-                # utils.print_fail(f"User <{user['UserName']}> is attached policies")
-                code = "Warning"
-
-            if len(inline) == 0:
-                # utils.print_pass(f"User <{user['UserName']}> is not embedded policies")
-                pass
-            else:
-                # utils.print_fail(f"User <{user['UserName']}> is embedded policies")
-                code = "Warning"
-
-            # if len(attached) or len(inline):
-            #     ret["alerts"].append({"level":"Danger", "msg":[{"text":f"{user['UserName']}에 정책이 직접 할당 되어있습니다.", "link":""}]})
-
             ret["tables"][0]["rows"].append([user["UserName"], len(attached), len(inline)])
+
+            if len(attached) > 0:
+                code = "Warning"
+
+            if len(inline) > 0:
+                code = "Warning"
 
 
     except botocore.exceptions.ClientError as error:
-        # utils.print_error(error.response["Error"]["Message"])
         code = "Error"
         errorMsg = error.response["Error"]["Message"]
 
@@ -349,13 +341,30 @@ def check04(session):
         "title": text.test4['title']
     })
 
-    print(title, time.time() - s)
-
     return ret
 
 def check05(session):
 
-    s = time.time()
+    """
+        check05 - CloudTrail 체크
+        사용 API - describe_trails, get_trail_status
+        
+        check05-1 - CloudTrail이 켜져있는지 체크
+        체크 기준
+            - [Success] 모든 CloudTrail이 켜져 있음
+            - [NO_TRAIL Danger] CloudTrail이 없음
+            - [ALL_OFF Danger] 모든 CloudTrail이 꺼져있음
+            - [Warning] 일부 CloudTrail이 꺼져있음
+
+        check05-2 - CloudTrail이 multi-region인지 체크
+        체크 기준
+            - [Success] 모든 CloudTrail이 multi-region으로 설정됨
+            - [NO_TRAIL Danger] CloudTrail이 없음
+            - [NO_MULTI Warning] 모든 CloudTrail이 multi-region으로 설정되지 않음
+            - [Warning] 일부 CloudTrail이 multi-region으로 설정되지 않음
+    
+    """
+    
 
     title = "05 Turn CloudTrail On"
     cloudtrail = session.client('cloudtrail')
@@ -382,28 +391,23 @@ def check05(session):
         trails = cloudtrail.describe_trails()["trailList"]
 
         if len(trails) == 0:
-            # utils.print_fail("No trails exists")
             code = "NO_TRAIL"
             code_multi_region = "NO_TRAIL"
 
         for trail in trails:
-            # print(trail["TrailARN"])
-            if(trail["IsMultiRegionTrail"]):
-                # utils.print_pass("Multi region trail: True")
-                multi_region += 1
-            else:
-                # utils.print_fail("Multi region trail: False")
-                code_multi_region = "Warning"
 
+            # Test5-1 logging status check
             status = cloudtrail.get_trail_status(Name=trail["TrailARN"])
             if(status["IsLogging"]):
-                # utils.print_pass("logging: True")
                 logging += 1
-
             else:
-                # utils.print_fail("logging: False")
-                # append_alert(ret, "Danger", [[f"{trail['TrailARN']}가 logging되고 있지 않습니다.", ""]])
                 code = "Warning"
+
+            # Test5-2 multi-region check
+            if(trail["IsMultiRegionTrail"]):
+                multi_region += 1
+            else:
+                code_multi_region = "Warning"
 
             append_table(ret, 0, [trail["TrailARN"], trail["IsMultiRegionTrail"], status["IsLogging"]])
         
@@ -417,14 +421,14 @@ def check05(session):
         errorMsg = error.response["Error"]["Message"]
         code = "Error"
 
-
-
+    # Test 5-1
     ret["alerts"].append({
         "level": text.test5_1[code]["level"],
         "msg": text.test5_1[code]["msg"] + [{"text":errorMsg, "link":""}],
         "title": text.test5_1["title"]
     })
 
+    # Test 5-2
     if code != "Error":
         ret["alerts"].append({
             "level": text.test5_2[code_multi_region]["level"],
@@ -432,13 +436,27 @@ def check05(session):
             "title": text.test5_2["title"]
         })
 
-    print(title, time.time() - s)
 
     return ret
 
 def check06(session):
 
-    s = time.time()
+    """
+        check06 - S3 체크
+        사용 API - get_caller_identity, get_public_access_block, list_buckets
+        
+        check06-1 - 계정의 퍼블릭 엑세스 차단 여부
+        체크 기준
+            - [Success] 모든 퍼블릭 엑세스가 차단되어 있음
+            - [Warning] 일부 퍼블릭 엑세스가 허용되어 있음
+
+        check06-2 - 개별 버킷들의 퍼블릭 엑세스 차단 여부
+        체크 기준
+            - [Success] 모든 버킷의 퍼블릭 엑세스가 차단되어 있음
+            - [Danger] 일부 버킷의 퍼블릭 엑세스가 허용되어 있음
+    
+    """
+    
     title = "06 Prevent Public Access to Private S3 Buckets"
 
     s3 = session.client('s3')
@@ -460,13 +478,12 @@ def check06(session):
 
     try:
 
+        # Test6-1 Account setting
         account_id = sts.get_caller_identity()["Account"]
         account_policy = s3control.get_public_access_block(AccountId=account_id)["PublicAccessBlockConfiguration"]
 
-        for key, val in account_policy.items():
-            if val:
-                pass
-            else:
+        for _, val in account_policy.items():
+            if val == False:
                 code = "Warning"
 
         append_table(ret, 0, ["Account 설정", "일부 허용" if code == "Warning" else "차단"])
@@ -477,10 +494,10 @@ def check06(session):
             "msg": text.test6_1[code]["msg"]
         })
 
+        # Test6-2 Individual buckets
         code_bucket = "Success"
         errorMsg_bucket = ""
         buckets = s3.list_buckets()["Buckets"]
-
 
         _executor = ThreadPoolExecutor(20)
 
@@ -526,7 +543,6 @@ def check06(session):
 
     except botocore.exceptions.ClientError as error:
         if error.response["Error"]["Code"] == "NoSuchPublicAccessBlockConfiguration":
-            # utils.print_pass(error.response["Error"]["Message"])
             ret["alerts"].append({
                 "title": text.test6_1["title"],
                 "level": text.test6_1["Success"]["level"],
@@ -540,14 +556,19 @@ def check06(session):
                 "msg": text.test6_1[code]["msg"] + [{"text":error.response["Error"]["Message"], "link":""}]
             })
 
-    
-    print(title, time.time() - s)
-
     return ret
 
 def check07(session):
 
-    s = time.time()
+    """
+        check07 - 비용 알람 및 루트 계정 엑세스 알람 확인
+        사용 API - describe_regions, describe_alarms
+        
+        체크 기준
+            - [Success] CloudWatch 알람이 설정되어 있음(비용과 루트 계정인지 체크 X)
+            - [NO_ALARM Warning] CloudWatch 알람이 설정되어 있지 않음
+    
+    """    
 
     title = "07 Configure Alarms"
     alarms_tot = []
@@ -621,13 +642,21 @@ def check07(session):
     })
 
 
-    print(title, time.time() - s)
 
     return ret
 
 def check08(session):
 
-    s = time.time()
+    """
+        check08 - 리전 별 사용 중인 VPC, Subnets를 ENI 정보를 바탕으로 체크
+        사용 API - describe_regions, describe_network_interfaces, describe_vpcs, describe_subnets
+        
+        체크 기준
+            - [Warning] 불필요한 항목을 진단할 수 없어서 EC2 global view 링크만 추가적으로 안내
+    
+    """  
+
+    
     title = "08 Delete unused VPCs, Subnets & Security Groups"
 
     ret = {
@@ -698,12 +727,22 @@ def check08(session):
         "title": text.test8["title"]
     })
 
-    print(title, time.time() - s)
 
     return ret
 
 def check09(session):
-    s = time.time()
+
+    """
+        check09 - Trusted Advisor가 켜져있는지 체크
+        사용 API - describe_trusted_advisor_checks
+        
+        체크 기준
+            - [Success] Trusted Advisor가 켜져 있음
+            - [Subscribe Warning] Business Support 이상의 Support Plan에서만 API를 통하여 상태가 확인 가능함
+            - [Warning] Trusted Advisor가 꺼져 있음
+
+    """  
+    
     title = "09 Enable AWS Trusted Advisor"
 
     support = session.client('support', region_name='us-east-1')
@@ -722,7 +761,6 @@ def check09(session):
 
     try:
         support.describe_trusted_advisor_checks(language="en")
-        # utils.print_pass("Trusted Advisor is enabled")
         code = "Success"
         append_table(ret, 0, ["켜져 있음"])
 
@@ -739,12 +777,21 @@ def check09(session):
         "level": text.test9[code]["level"],
         "msg": text.test9[code]["msg"] + [{"text":errorMsg, "link":""}]
     })
-    print(title, time.time() - s)
 
     return ret
 
 def check10(session):
-    s = time.time()
+
+    """
+        check10 - GuardDuty가 켜져 있는지 체크
+        사용 API - list_detectors, get_detector
+        
+        체크 기준
+            - [Success] GuardDuty가 켜져 있음
+            - [Warning] GuardDuty가 꺼져 있음
+
+    """  
+    
     title = "10 Enable GuardDuty"
     guardDuty = session.client("guardduty", region_name='ap-northeast-2')
     ret = {
@@ -763,19 +810,12 @@ def check10(session):
     try:
         detectors = guardDuty.list_detectors()["DetectorIds"]
         if len(detectors) == 0:
-            # utils.print_fail("GuardDuty is disabled")
             code = "Warning"
 
         for detector in detectors:
             detector = guardDuty.get_detector(DetectorId=detector)
             status = detector["Status"] 
-            if status == "ENABLED":
-                # utils.print_pass("GuardDuty is enabled")
-                # append_alert(ret, "Success", [["GuardDuty가 활성화되어 있습니다.", ""]])
-                pass
-
-            else:
-                # utils.print_fail("GuardDuty is disabled")
+            if status != "ENABLED":
                 code = "Warning"
 
 
@@ -789,15 +829,16 @@ def check10(session):
         "msg": text.test10[code]["msg"] + [{"text":errorMsg, "link":""}]
     })
 
-    print(title, time.time() - s)
 
     return ret
 
 
-async def generate_async_check(check, session, _executor):
+async def generate_async_check(idx, check, session, _executor):
 
     loop = asyncio.get_running_loop()
+    s = time.time()
     response = await loop.run_in_executor(_executor, check, session)
+    print(f"test{idx:02d}: {time.time() - s:.2}s")
     return response
     
 
@@ -806,7 +847,7 @@ async def async_checks(session, _executor, tests):
 
     checks = [check01, check02, check03, check04, check05, check06, check07, check08, check09, check10]
 
-    task_list = [asyncio.ensure_future(generate_async_check(checks[i-1], session, _executor)) for i in tests]
+    task_list = [asyncio.ensure_future(generate_async_check(i, checks[i-1], session, _executor)) for i in tests]
     
 
     done, _ = await asyncio.wait(task_list)
@@ -827,7 +868,7 @@ def checks(session, tests=[1,2,3,4,5,6,7,8,9,10]):
     s = time.time()
     loop = asyncio.get_event_loop()
     result = loop.run_until_complete(async_checks(session, _executor, tests))
-    print(time.time() - s)
+    print(f"---------------\ntotal: {time.time() - s:.2}s")
 
     return result
 

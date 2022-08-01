@@ -191,14 +191,14 @@ test4 = {
 }
 
 test5_1 = {
-    # [Danger] CloudTrail이 켜저있는지
+    # [Danger] CloudTrail이 켜져있는지
 
-    "title": "[Test05-1] CloudTrail이 켜저있는지 여부",
+    "title": "[Test05-1] CloudTrail이 켜져있는지 여부",
 
     "Success": {
         "level": "Success",
         "msg": [
-            {"text": "CloudTrail 모두 켜저있습니다.", "link": ""}
+            {"text": "CloudTrail 모두 켜져있습니다.", "link": ""}
         ]
     },
 

@@ -24,7 +24,7 @@ Package는 작성한 코드, README, 라이센스 파일 등을 AWS S3에 업로
 
 또한, 아래 명령어를 통하여 package를 진행할 수 있습니다. package가 정상적으로 되지 않을 경우 명령어에 `--force-upload`를 추가해주세요.
 
-```
+```bash
 sam package \
  --template-file template.yaml \
  --output-template-file packaged.yaml \
@@ -33,7 +33,7 @@ sam package \
 
 또한, 위에 명시한 S3 버킷의 리소스 정책에 아래 내용을 추가해주어야 Serverless Application Repository를 통하여 퍼블릭하게 배포가 가능합니다.
 
-```
+```json
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -58,7 +58,7 @@ sam package \
 
 Serverless Application Repository에 배포하는 방법입니다. 아래 명령어를 통하여 배포가 가능하며, `--region ap-northeast-2`와 같은 방식으로 배포 리전을 특정할 수 있습니다.
 
-```
+```bash
 sam publish --template packaged.yaml
 ```
 
@@ -99,7 +99,7 @@ lambda 함수 생성 시,
 
 을 환경 변수로 미리 설정해주어야 합니다. 이 값은 `template.yaml`에 이미 설정되어 있습니다.
 
-구체적인 동작 방식은 [링크](/ssb/README.md)를 참고해주세요.
+구체적인 동작 방식은 [링크](/ssb)를 참고해주세요.
 
 ### report
 
