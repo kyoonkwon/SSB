@@ -1,5 +1,5 @@
 import boto3
-from datetime import datetime, timezone, timedelta
+import datetime
 import os
 
 def lambda_handler(event, context):
@@ -28,10 +28,10 @@ def lambda_handler(event, context):
         }
 
     flag = True
-    last_modified = datetime.now(timezone.utc)
+    last_modified = datetime.datetime.now(datetime.timezone.utc)
     try:
         last_modified = bucket.Object("temp").get()["LastModified"]
-        if datetime.now(timezone.utc) - last_modified < timedelta(minutes=5):
+        if datetime.datetime.now(datetime.timezone.utc) - last_modified < datetime.timedelta(minutes=5):
             flag = False
 
     except Exception as e:
@@ -58,7 +58,7 @@ def lambda_handler(event, context):
     else:
         return {
             'statusCode': 400,
-            "body": f"API를 너무 자주 호출하였습니다. {(last_modified + timedelta(minutes=5)).astimezone()} 이후 다시 호출해 주세요.",
+            "body": f"API를 너무 자주 호출하였습니다. {(last_modified + datetime.timedelta(minutes=5)).astimezone()} 이후 다시 호출해 주세요.",
             "headers": {
                 'Content-Type': 'text/html;charset=UTF-8',
             }

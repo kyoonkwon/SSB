@@ -6,13 +6,13 @@
 
 ## Workshop
 
-워크샵 링크는 이후 업데이트될 예정입니다.
+애플리케이션 사용은 [워크샵](https://catalog.us-east-1.prod.workshops.aws/workshops/43af4c8d-a61e-4b61-ad43-36f1a64804df/ko-KR)을 참고해주세요.
 
 ## Requirement
 
 - AWS Account 및 배포에 필요한 권한을 가진 IAM User
 - [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) 설치 및 구성
-- [AWS Serverless Application Model](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) (AWS SAM)
+- [AWS Serverless Application Model CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html) (AWS SAM CLI)
 
 ## Package & Publish
 

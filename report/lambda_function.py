@@ -1,5 +1,5 @@
 import boto3
-from datetime import date, datetime, timedelta, timezone
+import datetime
 import os
 
 def lambda_handler(event, context):
@@ -11,7 +11,7 @@ def lambda_handler(event, context):
     presigned = int(os.environ["Presigned"])
     bucket_name = os.environ["Bucket"][13:]
 
-    object_name = f'result-{datetime.now().date().isoformat()}.html'
+    object_name = f'result-{datetime.datetime.now().date().isoformat()}.html'
 
 
     try:
@@ -20,7 +20,7 @@ def lambda_handler(event, context):
                                                         'Key': object_name},
                                                 ExpiresIn=presigned * 60 * 60)        
         
-        expired = datetime.now() + timedelta(hours=presigned)
+        expired = datetime.datetime.now() + datetime.timedelta(hours=presigned)
 
         sns.publish(TopicArn=topic, Message=f"""        
         리포트 파일의 미리 서명된(pre-signed) url을 생성하였습니다.

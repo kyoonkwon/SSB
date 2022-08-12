@@ -61,7 +61,7 @@ test2_2 = {
         "level": "Danger",
         "msg": [
             {"text": "루트 계정에 MFA가 설정되어 있지 않습니다. 링크를 통해 설정해주세요.", "link": ""},
-            {"text": "(루트 계정 MFA 설정)", "link": "https://docs.aws.amazon.com/ko_kr/IAM/latest/UserGuide/id_credentials_mfa_enable_virtual.html"}
+            {"text": "(루트 계정 MFA 설정)", "link": "https://docs.aws.amazon.com/ko_kr/IAM/latest/UserGuide/id_credentials_mfa_enable_virtual.html#enable-virt-mfa-for-root"}
         ]
     },
 

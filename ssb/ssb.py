@@ -520,7 +520,7 @@ def check06(session):
                         return bucket, False
                 return bucket, True
             except:
-                return bucket, True
+                return bucket, False
 
 
         loop = asyncio.new_event_loop()

@@ -24,7 +24,7 @@ def lambda_handler(event, context):
         topic = os.environ["Topic"]
         bucket_name = os.environ['Bucket'][13:]
 
-        object_name = f"result-{datetime.date.now().date().isoformat()}.html"
+        object_name = f"result-{datetime.datetime.now().date().isoformat()}.html"
         
 
         try:
