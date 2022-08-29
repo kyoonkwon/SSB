@@ -20,7 +20,13 @@ Parameters:
 
 Resources:
   SSBBucket:
-    Type: 'AWS::S3::Bucket'      
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True  
 
   SSBExecutionRole:
     Type: 'AWS::IAM::Role'
@@ -202,5 +208,5 @@ Metadata:
     SpdxLicenseId: Apache-2.0
     LicenseUrl: LICENSE
     ReadmeUrl: README.md
-    SemanticVersion: 1.1.1
+    SemanticVersion: 1.1.4
     SourceCodeUrl: https://github.com/kyoonkwon/SSB
